@@ -34,9 +34,10 @@ int** alloc_map(int h, int w) {
 }
 
 int read_map(FILE *f, t_data *d) {
-	if (fscanf(f, "%d %c %c %c\n", &d->h, &d->e, &d->o, &d->f) != 4 ||
-		d->h < 1 || d->e < 33 || d->e > 126 || d->o < 33 || d->o > 126 ||
-		d->f < 33 || d->f > 126 || d->e == d->o || d->e == d->f || d->o == d->f)
+	if (fscanf(f, "%d%c%c%c\n", &d->h, &d->e, &d->o, &d->f) != 4 ||
+		d->h < 1 || d->e < 32 || d->e > 126 || d->o < 32 || d->o > 126 ||
+		d->f < 32 || d->f > 126 || d->e == d->o || d->e == d->f || d->o == d->f)
+
 		return 0;
 
 	char *line = NULL;
@@ -113,18 +114,27 @@ void find_bsq(t_data *d) {
 }
 
 void print_map(t_data *d) {
-	char chars[] = {d->e, d->o, d->f};
-	for (int y = 0; y < d->h; y++) {
-		for (int x = 0; x < d->w; x++)
-			fputc(chars[d->map[y][x]], stdout);
-		fputc('\n', stdout);
-	}
+    char chars[] = {d->e, d->o, d->f};
+    
+    char *line = malloc(d->w + 2);
+    if (!line) {
+        fputs("Error\n", stderr);
+        return;
+    }
+    line[d->w] = '\n';
+    line[d->w + 1] = '\0';
+    for (int y = 0; y < d->h; y++) {
+        for (int x = 0; x < d->w; x++)
+            line[x] = chars[d->map[y][x]];
+        fputs(line, stdout);
+    }
+    free(line);
 }
 
 void process(FILE *f) {
 	t_data d = {0};
 	if (!read_map(f, &d)) {
-		fprintf(stderr, "map error\n");
+		fputs("map error\n", stderr);
 		return;
 	}
 	find_bsq(&d);
@@ -133,34 +143,20 @@ void process(FILE *f) {
 }
 
 int main(int ac, char **av) {
-	if (ac != 2) {
-		fprintf(stderr, "map error\n");
-		return 1;
-	}
-	FILE *f = fopen(av[1], "r");
-	if (!f) {
-		fprintf(stderr, "map error\n");
-		return 1;
-	}
-	process(f);
-	fclose(f);
-	return 0;
+    if (ac > 2) {
+        fputs("map error\n", stderr);
+        return 1;
+    }
+    if (ac == 1) {
+        process(stdin);
+    } else {
+        FILE *f = fopen(av[1], "r");
+        if (!f) {
+            fputs("map error\n", stderr);
+            return 1;
+        }
+        process(f);
+        fclose(f);
+    }
+    return 0;
 }
-/*
-int main(int ac, char **av) {
-	if (ac < 2) {
-		process(stdin);
-	} else {
-		for (int i = 1; i < ac; i++) {
-			FILE *f = fopen(av[i], "r");
-			if (!f) {
-				fprintf(stderr, "map error\n");
-				continue;
-			}
-			process(f);
-			fclose(f);
-		}
-	}
-	return 0;
-}
-*/
